@@ -1,0 +1,300 @@
+/* Register.css */
+.register-container {
+  min-height: 100vh;
+  width: 100vw;
+  background: radial-gradient(circle at top left, #050b14 0%, #000000 100%);
+  color: #fff;
+  font-family: 'Exo', sans-serif;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+/* Animated Grid Background */
+.register-grid-background {
+  position: absolute;
+  top: -50%; left: -50%; right: -50%; bottom: -50%;
+  background-image: 
+    linear-gradient(rgba(16, 185, 129, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 185, 129, 0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
+  transform: perspective(600px) rotateX(60deg) translateY(-100px) translateZ(-200px);
+  animation: register-grid-move 15s linear infinite;
+  z-index: 0;
+  pointer-events: none;
+}
+
+@keyframes register-grid-move {
+  0% { transform: perspective(600px) rotateX(60deg) translateY(0) translateZ(-200px); }
+  100% { transform: perspective(600px) rotateX(60deg) translateY(60px) translateZ(-200px); }
+}
+
+.register-card-wrapper {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: none;
+  padding: 0 20px;
+}
+
+/* Glow behind card */
+.register-glow {
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: -1;
+  opacity: 0.4;
+  animation: pulse-register-glow 5s infinite alternate;
+}
+
+.register-glow-orange {
+  background: #f97316;
+  top: -30px;
+  left: -30px;
+}
+
+.register-glow-blue {
+  background: #3b82f6;
+  bottom: -30px;
+  right: -30px;
+  animation-delay: 2.5s;
+}
+
+@keyframes pulse-register-glow {
+  0% { transform: scale(1); opacity: 0.3; }
+  100% { transform: scale(1.3); opacity: 0.6; }
+}
+
+/* The Card itself */
+.register-card {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 40px 35px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255,255,255,0.03);
+  position: relative;
+  overflow: hidden;
+  max-width: 550px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.register-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  box-shadow: inset 0 0 40px rgba(16, 185, 129, 0.05);
+  pointer-events: none;
+}
+
+.register-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.8), transparent);
+}
+
+.register-header {
+  text-align: center;
+  margin-bottom: 35px;
+  margin-top: 5px;
+}
+
+.register-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 5px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow: 0 0 15px rgba(249, 115, 22, 0.4), 2px 2px 0px rgba(0,0,0,0.8);
+}
+
+.register-subtitle {
+  font-family: 'Exo', sans-serif;
+  font-size: 0.95rem;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+}
+
+/* Form Styles */
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row {
+  display: flex;
+  width: 100%;
+}
+
+.split-row {
+  gap: 15px;
+}
+
+.split-row .input-group {
+  flex: 1;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  width: 100%;
+}
+
+.input-group label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.75rem;
+  color: #cbd5e1;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-shadow: 0 0 5px rgba(255,255,255,0.2);
+}
+
+.input-group input {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px 16px;
+  border-radius: 10px;
+  color: #fff;
+  font-family: 'Exo', sans-serif;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 3px 6px rgba(0,0,0,0.6);
+}
+
+.input-group input::placeholder {
+  color: rgba(148, 163, 184, 0.4);
+}
+
+.input-group input:focus {
+  border-color: #f97316;
+  box-shadow: 0 0 15px rgba(249, 115, 22, 0.3), inset 0 2px 4px rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* Primary Button */
+.btn-begin-journey {
+  margin-top: 15px;
+  background: linear-gradient(90deg, #8b5cf6, #f97316);
+  border: none;
+  padding: 18px;
+  border-radius: 12px;
+  color: #fff;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+  text-transform: uppercase;
+}
+
+.btn-begin-journey::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  transition: left 0.6s ease;
+  transform: skewX(-20deg);
+}
+
+.btn-begin-journey:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 25px rgba(139, 92, 246, 0.6), 0 0 20px rgba(249, 115, 22, 0.5);
+}
+
+.btn-begin-journey:hover::after {
+  left: 150%;
+  animation: shine-sweep 1.5s infinite;
+}
+
+@keyframes shine-sweep {
+  0% { left: -100%; }
+  50% { left: 150%; }
+  100% { left: 150%; }
+}
+
+.btn-begin-journey:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.btn-begin-journey:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  animation: pulse-loading-register 1.5s infinite;
+}
+
+@keyframes pulse-loading-register {
+  0% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); box-shadow: 0 0 20px rgba(249, 115, 22, 0.8); }
+  100% { opacity: 0.7; transform: scale(1); }
+}
+
+/* Social Login */
+.social-register-section {
+  margin-top: 30px;
+}
+
+.register-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.register-divider::before, .register-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.register-divider span {
+  padding: 0 15px;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+/* Footer */
+.register-footer {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 0.95rem;
+  color: #94a3b8;
+}
+
+.login-link {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.login-link:hover {
+  color: #f97316;
+  text-shadow: 0 0 8px rgba(249, 115, 22, 0.5);
+}
+
+@media (max-width: 480px) {
+  .split-row {
+    flex-direction: column;
+    gap: 20px;
+  }
+}

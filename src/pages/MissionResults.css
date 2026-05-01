@@ -1,0 +1,290 @@
+/* MissionResults.css */
+.results-screen {
+  height: 100vh;
+  width: 100vw;
+  background-color: #020617;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+.results-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.15;
+}
+
+.theme-success .results-bg {
+  background: radial-gradient(circle at 50% 50%, #10b981 0%, transparent 60%);
+  animation: pulse-bg-green 3s infinite alternate;
+}
+
+.theme-warn .results-bg {
+  background: radial-gradient(circle at 50% 50%, #ef4444 0%, transparent 60%);
+  animation: pulse-bg-red 3s infinite alternate;
+}
+
+@keyframes pulse-bg-green {
+  0% { transform: scale(1); opacity: 0.1; }
+  100% { transform: scale(1.2); opacity: 0.2; }
+}
+@keyframes pulse-bg-red {
+  0% { transform: scale(1); opacity: 0.1; }
+  100% { transform: scale(1.2); opacity: 0.2; }
+}
+
+.results-content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  padding: 40px;
+}
+
+.results-header {
+  text-align: center;
+}
+
+.results-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 4rem;
+  font-weight: 900;
+  margin: 0 0 10px 0;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
+.title-glitch-green {
+  color: #fff;
+  text-shadow: 0 0 20px rgba(16, 185, 129, 0.8), 2px 2px #10b981, -2px -2px #0ea5e9;
+  animation: minor-glitch 2s infinite alternate;
+}
+
+.title-glitch-red {
+  color: #fff;
+  text-shadow: 0 0 20px rgba(239, 68, 68, 0.8), 2px 2px #ef4444, -2px -2px #f97316;
+}
+
+.inline-icon {
+  color: inherit;
+  filter: drop-shadow(0 0 10px currentColor);
+}
+
+.results-subtitle {
+  font-size: 1.2rem;
+  color: #cbd5e1;
+  font-family: 'Exo', sans-serif;
+  letter-spacing: 1px;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.stat-card {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.05);
+  padding: 25px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.3);
+  transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(255,255,255,0.1);
+}
+
+.stat-icon {
+  background: rgba(0,0,0,0.3);
+  padding: 15px;
+  border-radius: 12px;
+  width: 65px;
+  height: 65px;
+}
+
+.text-green { color: #10b981; filter: drop-shadow(0 0 10px #10b981); }
+.text-orange { color: #f97316; filter: drop-shadow(0 0 10px #f97316); }
+.text-blue { color: #3b82f6; filter: drop-shadow(0 0 10px #3b82f6); }
+.text-purple { color: #a855f7; filter: drop-shadow(0 0 10px #a855f7); }
+.text-gray { color: #475569; }
+
+.stat-info h3 {
+  font-family: 'Exo', sans-serif;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin: 0 0 5px 0;
+  letter-spacing: 1px;
+}
+
+.stat-value {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Bonus Banner */
+.bonus-banner {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255,255,255,0.2);
+  padding: 15px;
+  text-align: center;
+  border-radius: 12px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 800;
+  font-size: 1.2rem;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.theme-success .bonus-banner {
+  color: #f97316;
+  border-color: rgba(249, 115, 22, 0.4);
+  background: rgba(249, 115, 22, 0.1);
+  text-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+}
+
+.theme-warn .bonus-banner {
+  color: #eab308;
+  border-color: rgba(234, 179, 8, 0.4);
+  background: rgba(234, 179, 8, 0.1);
+  text-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+}
+
+.inline-zap, .inline-warn {
+  animation: pulse-icon 1.5s infinite alternate;
+}
+
+/* Level Progress */
+.level-progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background: rgba(0,0,0,0.4);
+  padding: 25px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.level-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.level-tag {
+  background: #1e293b;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 800;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.level-status {
+  color: #cbd5e1;
+  font-size: 0.95rem;
+  letter-spacing: 1px;
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 20px;
+  background: #0f172a;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+  box-shadow: 0 0 20px currentColor;
+  position: relative;
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
+  animation: shine 2s infinite;
+}
+
+@keyframes shine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Action Area */
+.action-area {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.btn-continue {
+  background: linear-gradient(90deg, #3b82f6, #0ea5e9);
+  border: none;
+  color: #fff;
+  padding: 18px 50px;
+  border-radius: 12px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 10px 30px rgba(14, 165, 233, 0.4);
+}
+
+.btn-continue:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 15px 40px rgba(14, 165, 233, 0.6);
+}
+
+/* Animations */
+.fade-up {
+  opacity: 0;
+  transform: translateY(30px);
+  animation: slideUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.delay-1 { animation-delay: 0.2s; }
+.delay-2 { animation-delay: 0.4s; }
+.delay-3 { animation-delay: 0.6s; }
+.delay-4 { animation-delay: 0.8s; }
+.delay-5 { animation-delay: 1.2s; }
+.delay-6 { animation-delay: 1.5s; }
+.delay-7 { animation-delay: 2.0s; }
+
+@keyframes slideUp {
+  to { opacity: 1; transform: translateY(0); }
+}
