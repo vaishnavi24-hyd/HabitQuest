@@ -51,11 +51,12 @@ export default function Squad() {
     try {
       const activeQuest = JSON.parse(localStorage.getItem('activeQuest'));
       if (activeQuest) {
-        if (activeQuest.missionStatus === 'in_progress' && activeQuest.lastTickAt && activeQuest.remainingTime !== undefined) {
+        if (activeQuest.missionStatus === 'in_progress' && activeQuest.missionStartTime) {
            const now = Date.now();
-           const deltaSeconds = Math.floor((now - activeQuest.lastTickAt) / 1000);
-           const newRemaining = Math.max(0, activeQuest.remainingTime - deltaSeconds);
-           return newRemaining;
+           // missionDuration (in seconds) - (currentTime - missionStartTime) in seconds
+           const elapsed = Math.floor((now - activeQuest.missionStartTime) / 1000);
+           const total = getTotalTime();
+           return Math.max(0, total - elapsed);
         } else if (activeQuest.remainingTime !== undefined) {
            return activeQuest.remainingTime;
         }
@@ -70,6 +71,7 @@ export default function Squad() {
   const [timerActive, setTimerActive] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [breakPoints, setBreakPoints] = useState([]);
+  const completionPercentage = Math.round(((totalTime - timeLeft) / totalTime) * 100);
   
   // Ice Breaker State
   const [showIcebreaker, setShowIcebreaker] = useState(false);
@@ -80,7 +82,10 @@ export default function Squad() {
   const [powerBreaksUsed, setPowerBreaksUsed] = useState(0);
   const [showLimitWarning, setShowLimitWarning] = useState(false);
   const [showAbortModal, setShowAbortModal] = useState(false);
-  const [showIncompleteModal, setShowIncompleteModal] = useState(false);
+  const [showEarlyWarningModal, setShowEarlyWarningModal] = useState(false);
+  const [earlyWarningData, setEarlyWarningData] = useState(null);
+  const [resultModalData, setResultModalData] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Load Squad Data
   useEffect(() => {
@@ -88,7 +93,7 @@ export default function Squad() {
     if (savedData) {
       setSquadData(JSON.parse(savedData));
     } else {
-      navigate('/start-adventure');
+      navigate('/quest-builder');
     }
   }, [navigate]);
 
@@ -129,7 +134,9 @@ export default function Squad() {
       const active = JSON.parse(localStorage.getItem('activeQuest'));
       if (active) {
         active.remainingTime = timeLeft;
-        active.lastTickAt = Date.now();
+        if (!active.missionStartTime) {
+           active.missionStartTime = Date.now();
+        }
         active.missionStatus = 'in_progress';
         localStorage.setItem('activeQuest', JSON.stringify(active));
       }
@@ -151,6 +158,47 @@ export default function Squad() {
       }]);
     }
   }, [timeLeft, timerActive, totalTime]);
+
+  // Multiplayer Simulation Loop
+  useEffect(() => {
+    if (!timerActive) return;
+    const interval = setInterval(() => {
+      setSquadData(prev => {
+        const members = prev.members.map(m => {
+          if (m.isMe) {
+            return { ...m, progress: completionPercentage, status: isFocusMode ? 'active' : 'paused' };
+          }
+          // Simulate other members
+          if (m.status !== 'completed' && m.status !== 'aborted') {
+            let newStatus = m.status || 'active';
+            if (Math.random() < 0.05) newStatus = newStatus === 'active' ? 'paused' : 'active';
+            
+            let newProg = m.progress || completionPercentage || 0;
+            if (newStatus === 'active') {
+              newProg += (Math.random() * 2);
+              if (newProg >= 100) {
+                newProg = 100;
+                newStatus = 'completed';
+                addSystemMessage(`✅ ${m.name} just finished their mission!`);
+              }
+            }
+            // Joined Late simulation
+            const isLate = Math.random() < 0.1 && newProg < 5;
+            
+            return { ...m, progress: newProg, status: newStatus, isLate: m.isLate || isLate };
+          }
+          return m;
+        });
+        
+        // Sort members by progress dynamically
+        members.sort((a, b) => (b.progress || 0) - (a.progress || 0));
+        
+        return { ...prev, members };
+      });
+      
+      }, 5000);
+    return () => clearInterval(interval);
+  }, [timerActive, completionPercentage, isFocusMode, squadData.members.length]);
 
   const handlePowerBreakClick = () => {
     if (powerBreaksUsed >= 2) {
@@ -181,6 +229,13 @@ export default function Squad() {
     const active = JSON.parse(localStorage.getItem('activeQuest'));
     if (active) {
       active.missionStatus = 'in_progress';
+      if (!active.missionStartTime) {
+         // If starting for the first time, or resuming, calculate new missionStartTime
+         active.missionStartTime = Date.now() - ((totalTime - timeLeft) * 1000);
+      } else {
+         // We resumed from pause. Update missionStartTime to shift forward by paused duration
+         active.missionStartTime = Date.now() - ((totalTime - timeLeft) * 1000);
+      }
       localStorage.setItem('activeQuest', JSON.stringify(active));
     }
     addSystemMessage(`⚡ ${user?.username || 'You'} entered Focus Mode!`);
@@ -233,84 +288,143 @@ export default function Squad() {
     }, 2500);
   };
 
-  const handleCompleteClick = () => {
-    setTimerActive(false);
-    if (timeLeft > 0) {
-      setShowIncompleteModal(true);
-    } else {
-      executeCompletion('complete');
+  const playWarningBeep = () => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.type = 'sawtooth';
+      oscillator.frequency.setValueAtTime(150, audioCtx.currentTime); // Low warning buzz
+      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.3);
+    } catch(e) {}
+  };
+
+  const playSuccessChime = () => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); 
+      oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.2);
+      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.3);
+    } catch(e) {}
+  };
+
+  const processCompletionAndNavigate = async () => {
+    setIsProcessing(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      executeCompletion();
+      navigate('/command-center');
+    } catch (error) {
+      addSystemMessage('⚠️ Mission sync failed. Try again.');
+      setIsProcessing(false);
     }
   };
 
-  const confirmEarlyCompletion = () => {
-    setShowIncompleteModal(false);
-    executeCompletion('partial', timeLeft, totalTime);
+  const handleCompleteClick = () => {
+    const elapsedTime = totalTime - timeLeft;
+    const completionRatio = totalTime > 0 ? elapsedTime / totalTime : 0;
+    
+    if (completionRatio < 0.95) {
+      setTimerActive(false); // Pause timer
+      playWarningBeep();
+      let earnedXP = completionRatio >= 0.50 ? 18 : 5;
+      setEarlyWarningData({
+         elapsedTime,
+         earnedXP,
+         ratio: completionRatio
+      });
+      setShowEarlyWarningModal(true);
+    } else {
+      playSuccessChime();
+      processCompletionAndNavigate();
+    }
   };
 
-  const executeCompletion = (statusType, tLeft = 0, tTotal = 1) => {
+  const handleConfirmEarlyExit = () => {
+    setShowEarlyWarningModal(false);
+    processCompletionAndNavigate();
+  };
+
+  const handleCancelEarlyExit = () => {
+    setShowEarlyWarningModal(false);
+    setTimerActive(true); // Resume timer
+  };
+
+  const executeCompletion = () => {
     setTimerActive(false);
     setIsFocusMode(false);
     
+    // XP rules
+    const elapsedTime = totalTime - timeLeft;
+    const completionRatio = totalTime > 0 ? elapsedTime / totalTime : 0;
+    
+    let resultType = '';
+    let title = '';
+    let message = '';
+    let earnedXP = 0;
+
+    if (completionRatio >= 0.95) {
+      resultType = 'legendary';
+      title = 'LEGENDARY COMPLETION!';
+      message = 'Outstanding focus! Full reward unlocked.';
+      earnedXP = 30;
+    } else if (completionRatio >= 0.50) {
+      resultType = 'good';
+      title = 'GOOD EFFORT!';
+      message = 'Mission extracted partially. Keep pushing!';
+      earnedXP = 18;
+    } else {
+      resultType = 'aborted';
+      title = 'MISSION ABORTED EARLY';
+      message = 'You left before making significant progress.';
+      earnedXP = 5;
+    }
+
+    setResultModalData({ type: resultType, title, message, xp: earnedXP });
+
     setSquadData(prev => {
       const updatedMembers = prev.members.map(m => {
         if (m.isMe) {
-          return { ...m, completedToday: true, streak: m.streak + 1 };
+          return { ...m, completedToday: true, streak: m.streak + (resultType === 'legendary' ? 1 : 0), status: 'completed', progress: 100 };
         }
         return m;
       });
       return { ...prev, members: updatedMembers };
     });
-    
-    // Progress Active Quest
+
     const active = JSON.parse(localStorage.getItem('activeQuest'));
     if (active) {
-      active.currentDayProgress += 1;
+      if (resultType === 'legendary') active.currentDayProgress += 1;
+      
       if (active.currentDayProgress >= active.totalDays) {
-        active.status = 'completed';
-        localStorage.removeItem('activeQuest');
+         active.status = 'completed';
+         localStorage.removeItem('activeQuest');
       } else {
-        localStorage.setItem('activeQuest', JSON.stringify(active));
+         localStorage.setItem('activeQuest', JSON.stringify(active));
       }
       
-      // Update in history as well
       const existingQuests = JSON.parse(localStorage.getItem('habitQuests') || '[]');
       const updatedQuests = existingQuests.map(q => q.id === active.id ? active : q);
       localStorage.setItem('habitQuests', JSON.stringify(updatedQuests));
     }
-    
-    // Update Analytics
-    const elapsedRatio = statusType === 'complete' ? 1.0 : Math.max(0, (tTotal - tLeft) / tTotal);
-    const timeSpentMinutes = Math.floor((tTotal - tLeft) / 60);
-    const noBreaks = powerBreaksUsed === 0;
-    
-    let baseXP = 30;
-    if (active && active.currentDayProgress >= active.totalDays) baseXP = 100;
-    else if (statusType === 'partial') baseXP = 10;
-    
-    let earnedXP = statusType === 'partial' ? Math.max(0, Math.floor(baseXP * elapsedRatio)) : baseXP;
-    let bonusXP = (active && active.currentDayProgress >= active.totalDays) ? 50 : (statusType === 'complete' ? 10 : 0);
-    if (noBreaks && statusType === 'complete') bonusXP += 5;
-    const totalXP = earnedXP + bonusXP;
-    
+
     const analytics = JSON.parse(localStorage.getItem('userAnalytics') || '{"xpToday":0,"focusTime":0,"missions":0,"streak":0}');
-    analytics.xpToday += totalXP;
-    analytics.focusTime += timeSpentMinutes;
+    analytics.xpToday += earnedXP;
+    analytics.focusTime += Math.floor(elapsedTime / 60);
     analytics.missions += 1;
     analytics.streak = active ? active.currentDayProgress : (analytics.streak + 1);
     localStorage.setItem('userAnalytics', JSON.stringify(analytics));
-    
-    if (statusType === 'complete') {
-      addSystemMessage(`🏆 ${user?.username || 'You'} COMPLETED THE MISSION PERFECTLY!`);
-    } else {
-      addSystemMessage(`⚠️ ${user?.username || 'You'} EXTRACTED EARLY.`);
-    }
-
-
-
-    // Redirect to results
-    setTimeout(() => {
-      navigate(`/results?status=${statusType}&ratio=${elapsedRatio.toFixed(2)}&noBreaks=${noBreaks}`);
-    }, 500);
   };
 
   const handleAbortMission = () => {
@@ -348,7 +462,6 @@ export default function Squad() {
     return `${m}:${s}`;
   };
 
-  const completionPercentage = Math.round(((totalTime - timeLeft) / totalTime) * 100);
   const strokeDashoffset = 283 - (283 * (timeLeft / totalTime));
   const currentUser = squadData.members.find(m => m.isMe);
   const isComplete = currentUser?.completedToday;
@@ -372,21 +485,28 @@ export default function Squad() {
         </div>
       )}
 
-      {/* --- INCOMPLETE MODAL --- */}
-      {showIncompleteModal && (
-        <div className="abort-overlay">
-          <div className="abort-card">
-            <h1 className="abort-title" style={{color: '#f97316'}}>MISSION INCOMPLETE ⚠️</h1>
-            <p className="abort-desc">You ended early. Rewards reduced.</p>
-            <div className="stats-box" style={{background: 'rgba(0,0,0,0.5)', padding: '15px', borderRadius: '10px', margin: '20px 0', textAlign: 'left', color: '#cbd5e1'}}>
-              <p style={{margin: '5px 0'}}>Time completed: <strong style={{color: '#fff'}}>{formatTime(totalTime - timeLeft)}</strong></p>
-              <p style={{margin: '5px 0'}}>Time required: <strong style={{color: '#fff'}}>{formatTime(totalTime)}</strong></p>
-              <p style={{margin: '5px 0'}}>XP earned: <strong style={{color: '#f97316'}}>~{completionPercentage}%</strong></p>
+      {/* --- RESULT MODAL --- */}
+      {resultModalData && (
+        <div className="abort-overlay" style={{zIndex: 200}}>
+          <div className="victory-card">
+            <h1 className={`victory-title ${resultModalData.type === 'legendary' ? 'text-glitch' : ''}`} style={resultModalData.type === 'legendary' ? {color: '#f59e0b', textShadow: '0 0 20px #f59e0b'} : {color: '#cbd5e1'}}>
+              {resultModalData.type === 'legendary' && '🏆 '}
+              {resultModalData.type === 'good' && '⚡ '}
+              {resultModalData.type === 'aborted' && '⚠️ '}
+              {resultModalData.title}
+            </h1>
+            <p className="victory-desc">{resultModalData.message}</p>
+            
+            <div className="victory-stats" style={{ justifyContent: 'center', margin: '20px 0' }}>
+              <div className="v-stat" style={{ padding: '15px 30px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', borderRadius: '12px' }}>
+                <span style={{ display: 'block', fontSize: '0.9rem', color: '#cbd5e1', marginBottom: '5px' }}>XP Earned</span>
+                <strong style={{ color: '#10b981', fontSize: '1.8rem', textShadow: resultModalData.type === 'legendary' ? '0 0 15px rgba(16, 185, 129, 0.6)' : 'none' }}>+{resultModalData.xp} XP</strong>
+              </div>
             </div>
-            <div className="abort-actions">
-              <button className="btn-confirm-abort" onClick={confirmEarlyCompletion} style={{background: '#f97316', borderColor: '#f97316', color: '#fff'}}>Accept Reduced Reward</button>
-              <button className="btn-cancel-abort" onClick={() => {setShowIncompleteModal(false); setTimerActive(true);}}>Continue Mission</button>
-            </div>
+            
+            <button className="btn-launch-quest" style={{marginTop: '20px', width: '100%'}} onClick={() => window.location.href = '/command-center'}>
+              CONTINUE TO COMMAND CENTER
+            </button>
           </div>
         </div>
       )}
@@ -534,29 +654,71 @@ export default function Squad() {
             </div>
             
             <div className="roster-list">
-              {squadData.members.map((member) => (
-                <div key={member.id} className={`roster-row ${member.isMe ? 'is-current-user' : ''}`}>
-                  <div className={`avatar-ring ring-${member.color}`}>
-                    {member.avatar}
-                    <div className={`status-dot ${member.completedToday ? 'completed' : (timerActive ? 'active' : 'idle')}`}></div>
-                  </div>
-                  
-                  <div className="roster-info">
-                    <span className="roster-name">{member.name} {member.isMe && <span className="you-tag">YOU</span>}</span>
-                    <span className="roster-class">{member.class} • Lvl {member.level}</span>
-                  </div>
+              {squadData.members.map((member) => {
+                const prog = member.isMe ? completionPercentage : Math.round(member.progress || 0);
+                const isMemberCompleted = member.status === 'completed' || member.completedToday;
+                const isMemberPaused = member.status === 'paused';
+                const isMemberAborted = member.status === 'aborted';
+                
+                let statusIcon = <Circle size={18} className="icon-dim" />;
+                let statusText = 'Idle';
+                let statusColor = '#64748b';
+                
+                if (isMemberCompleted) {
+                   statusIcon = <CheckCircle2 size={18} className="icon-green" />;
+                   statusText = '✅ Completed';
+                   statusColor = '#10b981';
+                } else if (isMemberAborted) {
+                   statusIcon = <Crosshair size={18} style={{color: '#ef4444'}} />;
+                   statusText = '❌ Aborted';
+                   statusColor = '#ef4444';
+                } else if (isMemberPaused) {
+                   statusIcon = <Pause size={18} style={{color: '#f59e0b'}} />;
+                   statusText = '⏸ On Break';
+                   statusColor = '#f59e0b';
+                } else if (member.status === 'active') {
+                   statusIcon = <Activity size={18} style={{color: '#0ea5e9'}} className="pulse-icon" />;
+                   statusText = '🟢 In Mission';
+                   statusColor = '#0ea5e9';
+                }
 
-                  <div className="roster-stats">
-                    <div className="stat-fire">
-                      <Flame size={16} className={member.streak > 0 ? 'fire-on' : 'fire-off'} />
-                      <span>{member.streak}</span>
+                return (
+                  <div key={member.id} className={`roster-row ${member.isMe ? 'is-current-user' : ''}`}>
+                    <div className={`avatar-ring ring-${member.color}`}>
+                      {member.avatar}
+                      <div className="status-dot" style={{ backgroundColor: statusColor, boxShadow: `0 0 8px ${statusColor}` }}></div>
                     </div>
-                    <div className="stat-check">
-                      {member.completedToday ? <CheckCircle2 size={18} className="icon-green" /> : <Circle size={18} className="icon-dim" />}
+                    
+                    <div className="roster-info">
+                      <span className="roster-name">
+                        {member.name} {member.isMe && <span className="you-tag">YOU</span>}
+                        {member.isLate && <span className="late-tag">Joined Late</span>}
+                      </span>
+                      <span className="roster-status" style={{color: statusColor, fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px'}}>
+                        {statusText} • Lvl {member.level}
+                      </span>
+                      
+                      {/* Live Progress Bar for Member */}
+                      <div className="member-prog-wrap" style={{display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px'}}>
+                         <div style={{flex: 1, height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden'}}>
+                            <div style={{width: `${prog}%`, height: '100%', background: statusColor, transition: 'width 1s ease'}}></div>
+                         </div>
+                         <span style={{fontSize: '0.75rem', color: '#cbd5e1', fontWeight: 600, minWidth: '30px'}}>{prog}%</span>
+                      </div>
+                    </div>
+
+                    <div className="roster-stats">
+                      <div className="stat-fire">
+                        <Flame size={16} className={member.streak > 0 ? 'fire-on' : 'fire-off'} />
+                        <span>{member.streak}</span>
+                      </div>
+                      <div className="stat-check" style={{marginLeft: '10px'}}>
+                        {statusIcon}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             
             <div className="panel-footer">
@@ -564,14 +726,17 @@ export default function Squad() {
                 Abort Mission
               </button>
               {!isComplete ? (
-                <button 
-                  className="btn-complete-epic" 
-                  onClick={handleCompleteClick}
-                  disabled={completionPercentage < 30}
-                  style={{ opacity: completionPercentage < 30 ? 0.5 : 1, cursor: completionPercentage < 30 ? 'not-allowed' : 'pointer' }}
-                >
-                  <Zap size={20} className="zap-icon" /> COMPLETE MISSION
-                </button>
+                <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px'}}>
+                  <button 
+                    className="btn-complete-epic" 
+                    onClick={handleCompleteClick}
+                    disabled={totalTime - timeLeft < 5 || isProcessing}
+                    style={{ opacity: (totalTime - timeLeft < 5 || isProcessing) ? 0.5 : 1, cursor: (totalTime - timeLeft < 5 || isProcessing) ? 'not-allowed' : 'pointer' }}
+                  >
+                    <Zap size={20} className="zap-icon" /> {isProcessing ? 'Calculating rewards...' : 'COMPLETE MISSION'}
+                  </button>
+                  <span style={{fontSize: '0.75rem', color: '#cbd5e1', opacity: 0.8}}>Finish full session for max XP</span>
+                </div>
               ) : (
                 <div className="mission-done-badge">
                   <Award size={20} /> MISSION ACCOMPLISHED
@@ -639,7 +804,7 @@ function RiddleGame({ onWin }) {
   const [riddle, setRiddle] = useState(null);
   
   useEffect(() => {
-    setRiddle(RIDDLES[Math.floor(Math.random() * RIDDLES.length)]);
+    setTimeout(() => setRiddle(RIDDLES[Math.floor(Math.random() * RIDDLES.length)]), 0);
   }, []);
 
   if (!riddle) return null;
@@ -710,7 +875,7 @@ function MemoryGame({ onWin }) {
     const deck = [...symbols, ...symbols]
       .sort(() => 0.5 - Math.random())
       .map((s, i) => ({ id: i, symbol: s }));
-    setCards(deck);
+    setTimeout(() => setCards(deck), 0);
   }, []);
 
   useEffect(() => {
@@ -758,10 +923,10 @@ function PatternGame({ onWin }) {
 
   useEffect(() => {
     const seq = [Math.floor(Math.random() * 4), Math.floor(Math.random() * 4), Math.floor(Math.random() * 4)];
-    setSequence(seq);
+    setTimeout(() => setSequence(seq), 0);
     
     // Play sequence
-    setIsPlaying(true);
+    setTimeout(() => setIsPlaying(true), 0);
     let i = 0;
     const playNext = () => {
       if (i < seq.length) {

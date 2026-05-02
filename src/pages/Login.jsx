@@ -16,12 +16,7 @@ export default function Login() {
   // Redirect if already logged in, unless currently logging in
   useEffect(() => {
     if (user && !isLoggingIn) {
-      const activeMission = localStorage.getItem('activeQuest');
-      if (activeMission) {
-        navigate('/squad', { replace: true });
-      } else {
-        navigate('/', { replace: true });
-      }
+      navigate('/', { replace: true });
     }
   }, [user, navigate, isLoggingIn]);
 
@@ -39,12 +34,7 @@ export default function Login() {
         subtext: 'Your journey continues...'
       });
       setTimeout(() => {
-        const activeMission = localStorage.getItem('activeQuest');
-        if (activeMission) {
-          navigate('/squad');
-        } else {
-          navigate('/');
-        }
+        navigate('/');
       }, 1500);
     } catch (err) {
       setToast({

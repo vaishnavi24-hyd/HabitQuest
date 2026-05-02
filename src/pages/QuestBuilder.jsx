@@ -49,7 +49,7 @@ export default function QuestBuilder() {
     const active = JSON.parse(localStorage.getItem('activeQuest'));
     if (active && active.status === 'active') {
       setHasActiveQuest(true);
-      navigate('/dashboard', { replace: true });
+      navigate('/command-center', { replace: true });
     }
   }, [navigate]);
   
@@ -153,7 +153,7 @@ export default function QuestBuilder() {
             <ShieldAlert size={80} className="lock-icon" />
             <h2>🔒 Mission in Progress</h2>
             <p>You must complete your current quest before starting a new one.</p>
-            <button className="btn-continue" style={{marginTop: '30px'}} onClick={() => navigate('/dashboard')}>
+            <button className="btn-continue" style={{marginTop: '30px'}} onClick={() => navigate('/command-center')}>
               Return to Command Center
             </button>
           </div>

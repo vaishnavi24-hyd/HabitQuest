@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import HeroEvolution from '../components/HeroEvolution';
 import { 
   Shield, Zap, Flame, Clock, Target, Trophy, 
   ChevronRight, Activity, CalendarDays, Rocket 
@@ -87,29 +88,9 @@ export default function Dashboard() {
 
       <div className="dash-grid">
         
-        {/* SECTION 1: HERO CARD */}
-        <div className="dash-card hero-card">
-          <div className="hero-avatar-wrap">
-            <div className="hero-avatar-hex">
-              {user?.username ? user.username.substring(0, 2).toUpperCase() : 'ME'}
-            </div>
-            <div className="level-badge">{heroLevel}</div>
-          </div>
-          
-          <div className="hero-details">
-            <h2 className="hero-name">{user?.username || 'Vanguard'}</h2>
-            <span className="hero-class">{user?.heroClass || 'Cyber Knight'}</span>
-            
-            <div className="hero-xp-bar-container">
-              <div className="xp-bar-labels">
-                <span>XP PROGRESS</span>
-                <span>{currentXP} / {nextLevelXP}</span>
-              </div>
-              <div className="hero-xp-bg">
-                <div className="hero-xp-fill" style={{ width: `${xpPercent}%` }}></div>
-              </div>
-            </div>
-          </div>
+        {/* SECTION 1: HERO EVOLUTION */}
+        <div className="hero-evolution-wrapper">
+          <HeroEvolution currentStreak={analytics.streak} />
         </div>
 
         {/* SECTION 2: DAILY PERFORMANCE */}
@@ -215,7 +196,7 @@ export default function Dashboard() {
                   <button className="btn-abort-mission" style={{fontSize: '0.9rem', padding: '10px 20px'}} onClick={() => setShowAbortConfirm(true)}>
                     Abort Mission
                   </button>
-                  <button className="btn-launch-quest" style={{background: 'linear-gradient(90deg, #10b981, #0ea5e9)'}} onClick={() => navigate('/squad')}>
+                  <button className="btn-launch-quest" style={{background: 'linear-gradient(90deg, #10b981, #0ea5e9)'}} onClick={() => navigate('/mission')}>
                     ⚡ CONTINUE NEXT DAY
                   </button>
                 </div>
@@ -231,7 +212,7 @@ export default function Dashboard() {
                 <h3>RECOMMENDED NEXT MISSION</h3>
                 <p>System analysis suggests a <strong>Physical Discipline</strong> quest to balance your stats.</p>
               </div>
-              <button className="btn-launch-quest" onClick={() => navigate('/start-adventure')}>
+              <button className="btn-launch-quest" onClick={() => navigate('/quest-builder')}>
                 INITIATE LAUNCH <ChevronRight size={20} />
               </button>
             </div>

@@ -47,10 +47,18 @@ export default function Landing() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const [hasActiveQuest, setHasActiveQuest] = useState(false);
+  const [missionInProgress, setMissionInProgress] = useState(false);
 
   useEffect(() => {
     const checkActive = () => {
-      setHasActiveQuest(!!localStorage.getItem('activeQuest'));
+      const active = JSON.parse(localStorage.getItem('activeQuest'));
+      if (active) {
+         setHasActiveQuest(true);
+         setMissionInProgress(active.missionStatus === 'in_progress' || active.missionStatus === 'paused');
+      } else {
+         setHasActiveQuest(false);
+         setMissionInProgress(false);
+      }
     };
     checkActive();
     window.addEventListener('storage', checkActive);
@@ -61,10 +69,11 @@ export default function Landing() {
     };
   }, []);
 
+
   const handleLogout = () => {
     logout();
     setDropdownOpen(false);
-    navigate('/');
+    navigate('/login');
   };
 
   const renderAvatarIcon = () => {
@@ -109,12 +118,12 @@ export default function Landing() {
               {dropdownOpen && (
                 <div className="profile-dropdown fade-in" style={{ position: 'absolute', top: '100%', right: '0', width: '220px', background: 'rgba(15,23,42,0.95)', backdropFilter: 'blur(10px)', border: '1px solid rgba(139, 92, 246, 0.5)', boxShadow: '0 0 20px rgba(139, 92, 246, 0.4)', borderRadius: '12px', overflow: 'hidden', zIndex: 9999, marginTop: '10px' }}>
                   <div className="dropdown-menu" style={{ display: 'flex', flexDirection: 'column' }}>
-                    {!hasActiveQuest ? (
-                      <Link to="/start-adventure" className="dropdown-item" onClick={() => setDropdownOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', color: 'white', textDecoration: 'none', transition: 'background 0.2s' }}>
+                    {!missionInProgress ? (
+                      <Link to="/quest-builder" className="dropdown-item" onClick={() => setDropdownOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', color: 'white', textDecoration: 'none', transition: 'background 0.2s' }}>
                         <LayoutDashboard size={16} /> Start Adventure
                       </Link>
                     ) : (
-                      <Link to="/squad" className="dropdown-item" onClick={() => setDropdownOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', color: '#10b981', textDecoration: 'none', transition: 'background 0.2s' }}>
+                      <Link to="/mission" className="dropdown-item" onClick={() => setDropdownOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', color: '#10b981', textDecoration: 'none', transition: 'background 0.2s' }}>
                         <Zap size={16} /> Continue Mission
                       </Link>
                     )}
@@ -137,7 +146,7 @@ export default function Landing() {
             Turn your daily habits into epic quests. Build streaks, earn XP, and become your best self.
           </p>
           <div className="cta-group">
-            <Link to={user?.isLoggedIn ? (hasActiveQuest ? "/squad" : "/start-adventure") : "/register"} className="cta-primary">
+            <Link to={user?.isLoggedIn ? (missionInProgress ? "/mission" : "/quest-builder") : "/register"} className="cta-primary">
               {hasActiveQuest ? "⚡ Continue Mission" : "🚀 Start Adventure"}
             </Link>
             <Link to="/leaderboard" className="cta-secondary">🏆 Leaderboard</Link>
@@ -207,7 +216,7 @@ export default function Landing() {
       {/* Bottom CTA */}
       <section className="bottom-cta-section">
         <h3 className="bottom-cta-text">Your adventure is waiting...</h3>
-        <Link to={user?.isLoggedIn ? (hasActiveQuest ? "/squad" : "/start-adventure") : "/register"} className="cta-primary pulse-animation">
+        <Link to={user?.isLoggedIn ? (missionInProgress ? "/mission" : "/quest-builder") : "/register"} className="cta-primary pulse-animation">
           {hasActiveQuest ? "⚡ Continue Mission" : "🚀 Start Adventure"}
         </Link>
       </section>

@@ -29,11 +29,11 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       
       <Route path="/avatar" element={<ProtectedRoute><AvatarSelection /></ProtectedRoute>} />
-      <Route path="/start-adventure" element={<ProtectedRoute><QuestBuilder /></ProtectedRoute>} />
+      <Route path="/quest-builder" element={<ProtectedRoute><QuestBuilder /></ProtectedRoute>} />
       <Route path="/matchmaking" element={<ProtectedRoute><Matchmaking /></ProtectedRoute>} />
-      <Route path="/squad" element={<ProtectedRoute><Squad /></ProtectedRoute>} />
+      <Route path="/mission" element={<ProtectedRoute><Squad /></ProtectedRoute>} />
       <Route path="/results" element={<ProtectedRoute><MissionResults /></ProtectedRoute>} />
-      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/command-center" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
       
       <Route path="*" element={<Navigate to="/" replace />} />

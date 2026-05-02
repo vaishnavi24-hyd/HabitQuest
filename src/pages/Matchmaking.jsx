@@ -56,56 +56,47 @@ export default function Matchmaking() {
     }
     const myLvl = user?.level || 1;
     
-    // Match criteria: level diff <= 2. In a real app we'd also match habit and duration.
+    // Match criteria: level diff <= 5 first, then pad if needed
     let matchedUsers = allUsers.filter(u => Math.abs(u.level - myLvl) <= 5);
-    // Shuffle and pick up to 3
+    
+    // If not enough users match the criteria, pad with other available users
+    if (matchedUsers.length < 3) {
+      const remainingUsers = allUsers.filter(u => !matchedUsers.includes(u));
+      matchedUsers = [...matchedUsers, ...remainingUsers];
+    }
+    
+    // Shuffle and pick exactly 3
     matchedUsers = matchedUsers.sort(() => 0.5 - Math.random()).slice(0, 3);
 
-    if (matchedUsers.length === 0) {
+    // Now matchedUsers always has 3 elements, squad size is 4.
+    matchedUsers.forEach((mu, i) => {
       timeouts.push(setTimeout(() => {
-        setStatusText('🔍 Searching for squad...');
-      }, 1500));
-      timeouts.push(setTimeout(() => {
-        setStatusText('No matching warriors found. Deploying solo...');
-      }, 4000));
-      timeouts.push(setTimeout(() => {
+        if (i === 0) setStatusText('Locating nearby signals...');
+        else if (i === 1) setStatusText(`Syncing ${activeQuest.name} objectives...`);
+        else setStatusText('Assembling squad for ' + activeQuest.duration + ' mission...');
+        
+        setJoinedWarriors(prev => [...prev, { 
+          id: mu.id, name: mu.username, level: mu.level, avatar: mu.avatar, 
+          class: 'Warrior', color: ['purple', 'orange', 'green'][i] || 'blue', completedToday: Math.random() > 0.5, streak: mu.currentStreak 
+        }]);
+      }, 1500 * (i + 1)));
+    });
+
+    timeouts.push(setTimeout(() => {
+      setStatusText('Squad assembled. 4 warriors ready.');
+      
+      setJoinedWarriors(prev => {
         localStorage.setItem('currentSquad', JSON.stringify({
-          name: 'Lone Wolf',
-          members: [currentUser]
+          name: `${activeQuest.name.substring(0, 8)} Vanguard`,
+          members: prev
         }));
-        navigate('/squad');
-      }, 6000));
-    } else {
-      matchedUsers.forEach((mu, i) => {
-        timeouts.push(setTimeout(() => {
-          if (i === 0) setStatusText('Locating nearby signals...');
-          else if (i === 1) setStatusText(`Syncing ${activeQuest.name} objectives...`);
-          else setStatusText('Assembling squad for ' + activeQuest.duration + ' mission...');
-          
-          setJoinedWarriors(prev => [...prev, { 
-            id: mu.id, name: mu.username, level: mu.level, avatar: mu.avatar, 
-            class: 'Warrior', color: 'blue', completedToday: Math.random() > 0.5, streak: mu.currentStreak 
-          }]);
-        }, 1500 * (i + 1)));
+        return prev;
       });
+    }, 1500 * 4));
 
-      timeouts.push(setTimeout(() => {
-        setStatusText('Squad successfully formed!');
-        
-        setJoinedWarriors(prev => {
-          localStorage.setItem('currentSquad', JSON.stringify({
-            name: `${activeQuest.name.substring(0, 8)} Vanguard`,
-            members: prev
-          }));
-          return prev;
-        });
-        
-      }, 1500 * (matchedUsers.length + 1)));
-
-      timeouts.push(setTimeout(() => {
-        navigate('/squad');
-      }, 1500 * (matchedUsers.length + 2)));
-    }
+    timeouts.push(setTimeout(() => {
+      navigate('/mission');
+    }, 1500 * 5));
 
     return () => timeouts.forEach(clearTimeout);
   }, [navigate, user]);

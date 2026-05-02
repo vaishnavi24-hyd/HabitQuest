@@ -3,9 +3,17 @@ import { createContext, useContext, useState, useEffect } from 'react';
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const storedUser = localStorage.getItem('habitquest_user');
+      return storedUser ? JSON.parse(storedUser) : null;
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
+    // Keep this for cross-tab sync if needed, though mostly redundant now
     const storedUser = localStorage.getItem('habitquest_user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
@@ -23,7 +31,7 @@ export function AuthProvider({ children }) {
     const existingDataStr = localStorage.getItem('habitquest_user');
     let existingData = existingDataStr ? JSON.parse(existingDataStr) : {};
     
-    const userData = { ...existingData, isLoggedIn: true, heroName: existingData.heroName || username, level: existingData.level || 1, avatar: existingData.avatar || '' };
+    const userData = { ...existingData, isLoggedIn: true, isNewUser: false, heroName: existingData.heroName || username, level: existingData.level || 1, avatar: existingData.avatar || '' };
     setUser(userData);
     localStorage.setItem('habitquest_user', JSON.stringify(userData));
     return userData;
@@ -37,7 +45,7 @@ export function AuthProvider({ children }) {
       throw new Error('Summoning Failed');
     }
     
-    const userData = { isLoggedIn: true };
+    const userData = { isLoggedIn: true, isNewUser: true };
     setUser(userData);
     localStorage.setItem('habitquest_user', JSON.stringify(userData));
     return userData;

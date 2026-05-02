@@ -146,7 +146,7 @@ export default function MissionResults() {
         </div>
 
         <div className="action-area fade-up delay-7">
-          <button className="btn-continue" onClick={() => navigate(isFullQuestComplete ? '/start-adventure' : '/dashboard')}>
+          <button className="btn-continue" onClick={() => navigate(isFullQuestComplete ? '/quest-builder' : '/command-center')}>
             {isFullQuestComplete ? 'Start New Quest' : 'CONTINUE'} <ArrowRight size={20} />
           </button>
         </div>
